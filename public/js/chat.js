@@ -12,6 +12,7 @@ const ulUsuarios = document.querySelector('#ulUsuarios')
 const ulMensajes = document.querySelector('#ulMensajes')
 const btnSalir = document.querySelector('#btnSalir')
 
+
 const validarJWT = async () => {
 
     const token = localStorage.getItem('token') || ''
@@ -37,31 +38,32 @@ const validarJWT = async () => {
 
 const conectarSocket = () => {
 
-    const socketServer = io({
+    socket = io({
         'extraHeaders': {
             'x-token': localStorage.getItem('token')
         }
     }) // envio el jwt al server para poder verificar ya futuro habilitar el chat
 
-    socketServer.on('connect', ()=>{
+    socket.on('connect', ()=>{
         console.log('Sockets Online')
     })
 
-    socketServer.on('disconnect', ()=>{
+    socket.on('disconnect', ()=>{
         console.log('Sockets OffLine')
     })
 
     //lo que emiteremos al servidor
 
-    socketServer.on('recibir-mensajes', () => {
-        //TODO:
+    socket.on('recibir-mensajes', (payload) => {
+       dibujarMensajes(payload)
     })
-    socketServer.on('usuarios-activos', (payload) => {
+    socket.on('usuarios-activos', (payload) => {
         dibujarUsers(payload)
     })
-    socketServer.on('mensaje-privado', () => {
-        //TODO:
+    socket.on('mensaje-privado', (payload) => {
+        console.log('privado: ', payload) 
     })
+ 
 }
 
 const dibujarUsers = (usuarios = [])=> {
@@ -78,6 +80,34 @@ const dibujarUsers = (usuarios = [])=> {
         `
     })
     ulUsuarios.innerHTML = html
+}
+
+textMsg.addEventListener('keyup', ({keyCode}) => {
+    
+    const mensaje = textMsg.value
+    const uid = textUid.value
+    if(keyCode !== 13){return}
+    if(mensaje.length === 0 ) { return}
+
+    socket.emit('enviar-mensaje', {mensaje, uid})
+
+    textMsg.value = ' '
+})
+
+const dibujarMensajes = (mensajes = [])=> {
+    let html = ''
+    mensajes.forEach(({mensaje,nombre}) => {
+        html += `
+            <li>
+                <p>
+                    <span class="text-primary">${nombre}</span>
+                    <span>${mensaje}</span>
+                    </h5>
+                </p>
+            </li>
+        `
+    })
+    ulMensajes.innerHTML = html
 }
 
 const main = async () => {

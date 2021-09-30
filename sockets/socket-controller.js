@@ -24,11 +24,26 @@ const socketController = async (socket = new Socket, io) => { // se dispara con 
 
     //emite para todo el mundo la liosta de usuarios activos
     io.emit('usuarios-activos',chatMensajes.usuariosArr)
+    socket.emit('recibir-mensajes', chatMensajes.ultimos10)
+
+    //Conectar a sala especial
+
+    socket.join(userValidado.id) // es sincrono, tres salas habran golbal, socket.id, ususario.id
 
     //lIMPIAR cUANDO ALGUIEN sE DESCONECTA
     socket.on('disconnect', () => {
         chatMensajes.desconectarUsuario(userValidado.id)
         io.emit('usuarios-activos',chatMensajes.usuariosArr)
+    })
+
+    socket.on('enviar-mensaje', ({mensaje,uid}) => {
+        if(uid){
+            //Mnesaje privado
+            socket.to(uid).emit('mensaje-privado' ,{de : userValidado.nombre, mensaje} )
+        }else{
+        chatMensajes.enviarMensaje(userValidado.id , userValidado.nombre, mensaje)
+        io.emit('recibir-mensajes', chatMensajes.ultimos10)
+        }
     })
 
    // console.log('Se conecto: ' , userValidado.nombre )
